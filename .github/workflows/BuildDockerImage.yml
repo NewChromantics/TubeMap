@@ -7,7 +7,7 @@ on:
     tags:
       - v*
 env:
-  RepositoryName: 'tour_cms'
+  RepositoryName: 'tube'
   
 jobs:
   publish:
