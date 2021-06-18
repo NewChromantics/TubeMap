@@ -1,0 +1,55 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+env:
+  RepositoryName: 'tour_cms'
+  
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      # gr: we now have this file in the repository to make cloud build easier, but this breaks the github action build
+      - name: Remove File
+        uses: JesseTG/rm@v1.0.2
+        with:
+          path: .npmrc    
+
+      - name: Configure Node
+        uses: actions/setup-node@v1
+        with:
+          registry-url: https://npm.pkg.github.com/
+          scope: '@newchromantics'
+          node-version: 12
+
+      - name: Install Github Packages
+        run: npm i
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_KEY_ACTIONS }}
+
+      - id: lowerCaseRepo
+        uses: ASzc/change-string-case-action@v1
+        with:
+          string: ${{ github.repository }}
+  
+      # gr: github.event.repository.name is JUST ray-mon (no org)
+      # github.repository is not from an event though....
+      # https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#github-context
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: ${{ steps.lowerCaseRepo.outputs.lowercase }}/${{ env.RepositoryName }}
+          tag_with_ref: true
