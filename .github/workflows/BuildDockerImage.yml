@@ -7,7 +7,7 @@ on:
     tags:
       - v*
 env:
-  RepositoryName: 'tube'
+  RepositoryName: 'tubemap'
   
 jobs:
   publish:
