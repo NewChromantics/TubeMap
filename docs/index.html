@@ -10,6 +10,11 @@
 	--InfoBoxColour:		#beb;
 	--InfoBoxColourDark:	#2a2;
 	
+	--BodyBackgroundColour:		#eee;
+	--TrainBackgroundColour:	#fff;
+	--TimeBackgroundColour:		#eee;
+	--TimeFontColour:		#888;
+	
 	--northern:				#222;
 	--circle:				#ec4;
 	--metropolitan:			#915;
@@ -27,7 +32,7 @@
 
 body
 {
-	background:		#eee;
+	background:		var(--BodyBackgroundColour);
 	font-family:	sans-serif;
 	font-size:		10pt;
 	font-weight:	bold;
@@ -74,13 +79,13 @@ body
 #TrainList *
 {
 	color:				var(--LineColour);
-	background-color:	white;
+	background-color:	var(--TrainBackgroundColour);
 }
 
 #TrainList *[Arrived],
 #TrainList *[Expired]
 {
-	color:				white;
+	color:				var(--TrainBackgroundColour);
 	background-color:	var(--LineColour);
 }
 
@@ -89,10 +94,10 @@ body
 {
 	display:			inline-block;
 	content:			attr(SecsToArrive);
-	background-color:	#eee;
-	color:				#ccc;
-	width:				3em;
-	margin-left:		0.6em;
+	background-color:	var(--TimeBackgroundColour);
+	color:				var(--TimeFontColour);
+	xxwidth:				3em;
+	margin-left:		1.2em;
 	padding:			0.3em;
 	font-size:			70%;
 	overflow:			hidden;
@@ -188,7 +193,7 @@ body
 </head>
 <body>
 
-<h1>Next trains arriving</h1>
+<h1>Next london underground trains arriving...</h1>
 <div class="InfoBox"></div>
 
 <div id="TrainList"></div>
