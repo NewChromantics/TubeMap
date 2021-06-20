@@ -4,6 +4,16 @@
 //StationStopPoints.HIGH$=$'HUBHHY';
 //StationStopPoints.SevenSisters$=$'HUBSVS';
 
+//	https://api.tfl.gov.uk/StopPoint/910GHDON
+//	will tell us what modes it can possibly support
+
+//	gr: this doesnt always find them??
+//	https://api.tfl.gov.uk/StopPoint/Search/camden?modes=tube%2Coverground
+//	got a list from a forum post
+//	https://techforum.tfl.gov.uk/t/find-all-tfl-stoppoints/1324/2
+//	https://api.tfl.gov.uk/StopPoint/mode/tube returns SOO much data
+
+
 export const LineFormattedNames =
 {
 	'london-overground':	'overground'
@@ -11,7 +21,7 @@ export const LineFormattedNames =
 
 export const StationStopPoints =
 {
-	Abbey$Wood:		"910GABWD",
+	//Abbey$Wood:		"910GABWD",
 	Abbey$Wood$Crossrail:		"910GABWD",
 	Acton$Central:		"910GACTNCTL",
 	Acton$Main$Line:		"910GACTONML",
@@ -39,7 +49,7 @@ export const StationStopPoints =
 	Barons$Court:		"940GZZLUBSC",
 	Bat$And$Ball:		"910GBATABAL",
 	Battersea$Park:		"910GQTRDBAT",
-	Bayswater:		"940GZZLUBWT",
+	//Bayswater:		"940GZZLUBWT",
 	Beckenham$Hill:		"910GBCKNHMH",
 	Beckenham$Junction:		"910GBCKNHMJ",
 	Beckton:		"940GZZDLBEC",
@@ -121,12 +131,12 @@ export const StationStopPoints =
 	Colindale:		"940GZZLUCND",
 	Colliers$Wood:		"940GZZLUCSD",
 	Coulsdon$South:		"910GCOLSDNS",
-	Coulsdon$Town:		"910GCOLSTWN",
+	//Coulsdon$Town:		"910GCOLSTWN",
 	Covent$Garden:		"940GZZLUCGN",
 	Crayford:		"910GCRFD",
 	Crews$Hill:		"910GCRHL",
 	Cricklewood:		"910GCRKLWD",
-	Crofton$Park:		"910GCFPK",
+	//Crofton$Park:		"910GCFPK",
 	Crossharbour:		"940GZZDLCLA",
 	Crouch$Hill:		"910GCROUCHH",
 	Crystal$Palace:		"910GCRYSTLP",
@@ -197,7 +207,7 @@ export const StationStopPoints =
 	Fulwell:		"910GFULWELL",
 	Gallions$Reach:		"940GZZDLGAL",
 	Gants$Hill:		"940GZZLUGTH",
-	Gidea$Park:		"910GGIDEAPK",
+	//Gidea$Park:		"910GGIDEAPK",
 	Gipsy$Hill:		"910GGIPSYH",
 	Gloucester$Road:		"940GZZLUGTR",
 	Golders$Green:		"940GZZLUGGN",
@@ -225,7 +235,7 @@ export const StationStopPoints =
 	Hampstead:		"940GZZLUHTD",
 	Hampstead$Heath:		"910GHMPSTDH",
 	Hampton$_London_:		"910GHAMPTON",
-	Hampton$Wick:		"910GHAMWICK",
+	//Hampton$Wick:		"910GHAMWICK",
 	Hanger$Lane:		"940GZZLUHGR",
 	Hanwell:		"910GHANWELL",
 	Harlesden:		"910GHARLSDN",
@@ -240,7 +250,7 @@ export const StationStopPoints =
 	Hayes$_Kent_:		"910GHAYS",
 	Headstone$Lane:		"910GHEDSTNL",
 	Heathrow$Airport$Terminal$5:		"910GHTRWTM5",
-	Hendon:		"910GHDON",
+	//Hendon:		"910GHDON",
 	Hendon$Central:		"940GZZLUHCL",
 	Herne$Hill:		"910GHERNEH",
 	Heron$Quays:		"940GZZDLHEQ",
@@ -286,7 +296,7 @@ export const StationStopPoints =
 	Kilburn$Park:		"910GKLBRNHR",
 	Kings$Cross:		"910GKNGX",
 	Kingsbury:		"940GZZLUKBY",
-	Kingston:		"910GKGSTON",
+	//Kingston:		"910GKGSTON",
 	Knightsbridge:		"940GZZLUKNB",
 	Knockholt:		"910GKNCKHLT",
 	Ladbroke$Grove:		"940GZZLULAD",
@@ -294,7 +304,7 @@ export const StationStopPoints =
 	Lambeth$North:		"940GZZLULBN",
 	Lancaster$Gate:		"940GZZLULGT",
 	Latimer$Road:		"940GZZLULRD",
-	Lea$Bridge:		"910GLEABDGE",
+	//Lea$Bridge:		"910GLEABDGE",
 	Lee:		"910GLEEE",
 	Leicester$Square:		"940GZZLULSQ",
 	Lewisham:		"910GLEWISHM",
@@ -310,7 +320,7 @@ export const StationStopPoints =
 	Loughborough$Junction:		"910GLBGHJN",
 	Lower$Sydenham:		"910GLSYDNHM",
 	Maida$Vale:		"940GZZLUMVL",
-	Malden$Manor:		"910GMALDENM",
+	//Malden$Manor:		"910GMALDENM",
 	Manor$House:		"940GZZLUMRH",
 	Manor$Park:		"910GMANRPK",
 	Mansion$House:		"940GZZLUMSH",
@@ -361,7 +371,7 @@ export const StationStopPoints =
 	Northwood$Hills:		"940GZZLUNWH",
 	Norwood$Junction:		"910GNORWDJ",
 	Notting$Hill$Gate:		"940GZZLUNHG",
-	Nunhead:		"910GNUNHEAD",
+	//Nunhead:		"910GNUNHEAD",
 	Oakleigh$Park:		"910GOKLGHPK",
 	Oakwood:		"940GZZLUOAK",
 	Old$Street:		"910GOLDST",
@@ -376,7 +386,7 @@ export const StationStopPoints =
 	Park$Royal:		"940GZZLUPKR",
 	Parsons$Green:		"940GZZLUPSG",
 	Peckham$Rye:		"910GPCKHMRY",
-	Penge$East:		"910GPNGEE",
+	//Penge$East:		"910GPNGEE",
 	Penge$West:		"910GPENEW",
 	Perivale:		"940GZZLUPVL",
 	Petts$Wood:		"910GPETSWD",
@@ -387,7 +397,7 @@ export const StationStopPoints =
 	Plumstead:		"910GPLMS",
 	Ponders$End:		"910GPNDRSEN",
 	Poplar:		"940GZZDLPOP",
-	Preston$Road:		"940GZZLUPRD",
+	//Preston$Road:		"940GZZLUPRD",
 	Prince$Regent:		"940GZZDLPRE",
 	Pudding$Mill$Lane:		"940GZZDLPUD",
 	Purley:		"910GPURLEY",
@@ -488,7 +498,7 @@ export const StationStopPoints =
 	Syon$Lane:		"910GSYONLA",
 	Teddington:		"910GTEDNGTN",
 	Temple:		"940GZZLUTMP",
-	Tooting:		"910GTOOTING",
+	//Tooting:		"910GTOOTING",
 	Tooting$Bec:		"940GZZLUTBC",
 	Tooting$Broadway:		"940GZZLUTBY",
 	Tottenham$Court$Road:		"940GZZLUTCR",

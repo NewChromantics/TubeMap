@@ -7,6 +7,8 @@
 :root
 {
 	--NewColour:			#5d5;
+	--InfoBoxColour:		#beb;
+	--InfoBoxColourDark:	#2a2;
 	
 	--northern:				#222;
 	--circle:				#ec4;
@@ -20,6 +22,7 @@
 	--district:				#153;
 	--bakerloo:				#851;
 	--victoria:				#29f;
+	--dlr:					#7c9;
 }
 
 body
@@ -64,6 +67,7 @@ body
 #TrainList *[Line=district]			{	--LineColour:	var(--district);	}
 #TrainList *[Line=bakerloo]			{	--LineColour:	var(--bakerloo);	}
 #TrainList *[Line=victoria]			{	--LineColour:	var(--victoria);	}
+#TrainList *[Line=dlr]				{	--LineColour:	var(--dlr);	}
 
 
 
@@ -102,7 +106,7 @@ body
 
 #TrainList *:before
 {
-	xdisplay:			inline-block;
+	display:			inline-block;
 	content:			attr(Line);
 	background-color:	var(--LineColour);
 	color:				#eee;
@@ -159,23 +163,40 @@ body
 }
 */
 
-
+.InfoBox
+{
+	--Colour:		var(--InfoBoxColour);
+	--DarkColour:	var(--InfoBoxColourDark);
+	background:		var(--Colour);
+	color:			var(--DarkColour);
+	margin:			1em;
+	border:			1px solid var(--DarkColour);
+	padding:		0.6em;
+	
+	position:		absolute;
+	top:			0px;
+	right:			0px;
+	
+	font-size:		90%;
+}
+.InfoBox:empty
+{
+	display:	none;
+}
 
 </style>
 </head>
 <body>
+
 <h1>Next trains arriving</h1>
+<div class="InfoBox"></div>
+
 <div id="TrainList"></div>
 
 <script type=module>
 
 import * as Pop from './PopUtils.js'
 
-//	gr: this doesnt always find them??
-//	https://api.tfl.gov.uk/StopPoint/Search/camden?modes=tube%2Coverground
-//	got a list from a forum post
-//	https://techforum.tfl.gov.uk/t/find-all-tfl-stoppoints/1324/2
-//	https://api.tfl.gov.uk/StopPoint/mode/tube returns SOO much data
 import {StationStopPoints,StationFormattedNames,LineFormattedNames} from './Stations.js'
 
 
@@ -190,8 +211,10 @@ const ThrottleUpdateAllSecs = 600;
 const ModeNames = 
 [
 'overground',
-'tube'
+'tube',
+'dlr'
 ];
+
 
 
 const TrainData = [];
@@ -389,15 +412,48 @@ function UpdateDomNodes()
 	Children.forEach(UpdateTrainElement);
 }
 
+async function CheckStationHasTrains(StationCode)
+{
+	const StopPoint = StationStopPoints[StationCode];
+	const Url = `https://api.tfl.gov.uk/StopPoint/${StopPoint}`;
+
+	const FetchParams = {};
+	FetchParams.mode = 'cors';
+	const Response = await fetch( Url, FetchParams );
+	const Json = await Response.json();
+
+	const MatchingModes = Json.modes.filter( Mode => ModeNames.indexOf(Mode)!= -1);
+	if ( MatchingModes.length == 0 )
+		throw `${StationCode} doesn't have underground trains, only; ${Json.modes.join(',')}`;
+
+	console.log(`${StationCode} supports ${MatchingModes.join(',')}`);
+	return Json;
+}
+
 async function RefreshStation(StationCode)
 {
 	const TimeSecs = GetTimeNowSecs();
 	const Json = await GetStationJson(StationCode);
 	const Trains = await GetStationTrains(Json,StationCode,TimeSecs);
 	
+	//	throw an error if we query a station with no tube trains
+	if ( !Trains.length )
+	{
+		await CheckStationHasTrains(StationCode);
+	}
+	
 	Trains.forEach( PushTrainData );
 }
+
+
+function ShowInfo(Info)
+{
+	if ( !Info )
+		Info = '';
 	
+	const InfoBox = document.querySelector('.InfoBox');
+	InfoBox.innerText = Info;
+}
 
 async function RefreshStations()
 {
@@ -415,20 +471,22 @@ async function RefreshStations()
 	
 	//	for debugging shuffle the order we fetch
 	let StationNames = Object.keys(StationStopPoints);
-	Pop.ShuffleArray(StationNames);
-
+	//Pop.ShuffleArray(StationNames);
 
 	while(true)
 	{
 		const CurrentStation = StationNames[CurrentIndex];
 		try
 		{
+			ShowInfo(`Fetching ${StationFormattedNames[CurrentStation]}...`);
 			await RefreshStation(CurrentStation);
+			//ShowInfo(null);
 			UpdateDomNodes();
 		}
 		catch(e)
 		{
 			console.error(`Refreshing station ${CurrentStation} error: ${e}`);
+			ShowInfo(`Refreshing station ${CurrentStation} error: ${e}`);
 			await WaitSecs(1);
 		}
 		CurrentIndex = (CurrentIndex+1) % StationNames.length;
@@ -442,7 +500,7 @@ async function RefreshStations()
 	}
 }
 
-RefreshStations();
+RefreshStations().catch(ShowInfo);
 
 </script>
 
