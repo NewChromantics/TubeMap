@@ -355,7 +355,6 @@ function PushTrainData(Train)
 	//	save references
 	TrainElement.Train = Train;
 	Train.Element = TrainElement;
-	SortDomNodes();
 }
 
 function SortDomNodes()
@@ -443,6 +442,7 @@ async function RefreshStation(StationCode)
 	}
 	
 	Trains.forEach( PushTrainData );
+	SortDomNodes();
 }
 
 
