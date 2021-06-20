@@ -1,0 +1,378 @@
+<html>
+<head>
+
+<style>
+/*@import "Editor.css";*/
+
+:root
+{
+	--northern:		#000;
+	--circle:		#ec4;
+	--metropolitan:	#838;
+	--hammersmith-city:	#c5c;
+}
+
+body
+{
+	background:		#eee;
+	font-family:	sans-serif;
+	font-size:		10pt;
+	font-weight:	bold;
+}
+/*
+#TrainList
+{
+	--CellMinSize:			10vw;
+	--CellMaxSize:			30vw;
+	display:				grid;
+	xxxgrid-template-columns:	repeat(auto-fit, minmax( var(--CellMinSize), var(--CellMaxSize) ) );
+	grid-gap:				2vmin;
+	grid-template-columns:	1fr;
+}
+*/
+
+#TrainList:empty:before
+{
+	content:	"Loading train list...";
+}
+
+
+#TrainList *
+{
+	--LineColour:	lime;	/* default */
+}
+
+#TrainList *[Line=northern]	{	--LineColour:	var(--northern);	}
+#TrainList *[Line=circle]	{	--LineColour:	var(--circle);	}
+#TrainList *[Line=metropolitan]	{	--LineColour:	var(--metropolitan);	}
+#TrainList *[Line=hammersmith-city]	{	--LineColour:	var(--hammersmith-city);	}
+
+
+#TrainList *
+{
+	color:				var(--LineColour);
+	background-color:	white;
+}
+
+#TrainList *[Arrived]
+{
+	color:				white;
+	background-color:	var(--LineColour);
+}
+
+#TrainList *:before
+{
+	display:	inline-block;
+	content:			attr(SecsToArrive);
+	background-color:	#eee;
+	color:				#ccc;
+	width:				3em;
+	padding-right:		0.3em;
+	text-align:			right;
+}
+
+#TrainList *[Expired]
+{
+	--LineColour:	#ccc;
+}
+
+/*
+#TrainList 
+{
+	color:	yellow;
+}
+
+#TrainList *[New]
+{
+	color:	lime;
+}
+
+#TrainList *[Arrived]
+{
+	color:	red;
+}
+
+#TrainList *[Expired]
+{
+	color:	black;
+}
+*/
+
+
+
+</style>
+</head>
+<body>
+
+<h1>Next trains arriving</h1>
+<div id="TrainList"></div>
+
+<script type=module>
+
+import * as Pop from './PopUtils.js'
+
+//	https://api.tfl.gov.uk/StopPoint/Search/camden?modes=tube%2Coverground
+const StationStopPoints = {};
+StationStopPoints.CTN = '940GZZLUCTN';//	camden underground
+StationStopPoints.EUS = '940GZZLUESQ';//	euston
+
+const StationNames = Object.keys(StationStopPoints);
+
+const TrainNewTimeSecs = 5;
+const TrainWaitTimeSecs = 13;
+
+//	filtering only these modes
+const ModeNames = 
+[
+'overground',
+'tube'
+];
+
+const LineNames = {};
+LineNames.northern = 'N';
+
+const TrainData = [];
+
+function GetStationUrl(StopPoint)
+{
+	return `https://api.tfl.gov.uk/StopPoint/${StopPoint}/Arrivals`;
+}
+
+async function GetStationJson(StationCode)
+{
+	const StopPoint = StationStopPoints[StationCode];
+	const Url = GetStationUrl(StopPoint);
+	
+	const headers = new Headers();
+	//headers.append('Access-Control-Allow-Origin','*');
+	
+	const FetchParams = {};
+	//FetchParams.mode = 'no-cors';
+	FetchParams.mode = 'cors';
+	FetchParams.headers = headers;
+	//FetchParams.redirect = 'follow';
+	
+	const Response = await fetch( Url, FetchParams );
+	//const TextPromise = Response.text();
+	const JsonPromise = Response.json();
+	//const Body = await TextPromise;
+	const Json = await JsonPromise;
+	
+	return Json;
+}
+
+function GetTimeNowSecs()
+{
+	const Ms = Date.now();
+	//return Math.floor(Pop.GetTimeNowMs() / 1000);
+	const Secs = Math.floor( Ms / 1000 );
+	return Secs %1000;
+}
+
+function TimestampToTimeSecs(DateString)
+{
+	//2021-06-20T15:26:19Z
+	const DateValue = Date.parse(DateString);
+	const Secs = DateValue.getTime();
+	return Secs % 1000;
+}
+
+//	parse XML
+/*
+ <S Code="CTN" Mess="" N="Camden Town." CurTime="15:45:59">
+    <P N="Northbound - Platform 1" Num="1" TrackCode="TN60164" NextTrain="false">
+      <T TrainId="2943082" LCID="141" SetNo="054" TripNo="11" SecondsTo="0" TimeTo="-" Location="At Platform" Destination="Edgware via CX" InputDest="EDG3-X (EDG3//EDG3-X) [EDG3=X/EDG3=X]" DestCode="153" Order="0" DepartTime="14:45:33" DepartInterval="0" Departed="0" Direction="0" IsStalled="0" TrackCode="TN60165" LN="N" LeadingCarNo="51641" />
+     */
+async function GetStationTrains(StationJson,StationCode,FetchTimeSecs)
+{
+	function MinimiseTrain(TrainData)
+	{
+		//	filter out non underground/overground trains
+		if ( ModeNames.indexOf(TrainData.modeName) == -1 )
+		{
+			console.log(`Filtered out train mode ${TrainData.modeName}`);
+			return null;
+		}
+			
+		const Train = {};
+		Train.AddedTime = FetchTimeSecs;
+		Train.ArrivalTime = FetchTimeSecs + TrainData.timeToStation;
+		Train.Line = TrainData.lineId;
+		Train.Station = StationCode;
+		Train.PredictionId = TrainData.id;	//	seems to be unique (string)
+		
+		//	"delete this data from your cache"
+		if ( TrainData.operationType == 2 )
+		{
+			console.log(`Got Delete Cache operation; ${JSON.stringify(TrainData)}`);
+			Train.ArrivalTime = null;
+		}
+		
+		return Train;
+	}
+	
+	const Trains = StationJson.map(MinimiseTrain).filter( t => t!=null );
+	return Trains;
+	/*
+	//	regex for xml 
+	const TrainPattern = `<T [.*] TimeTo="(.*)"[.*]/>`;
+	const TrainMatches = [...Xml.matchAll(TrainPattern)];
+	
+	function MatchToTrain(Match)
+	{
+		const Train = {};
+		Train.ArrivalTime = Match[1];
+		return Train;
+	}
+	const Trains = TrainMatches.map(MatchToTrain);
+	return Trains;
+	*/
+}
+
+function UpdateTrainDom(Train)
+{
+	const Div = document.createElement('div');
+	Div.innerText = Train;
+	document.body.appendChild(Div);
+}
+
+function PushTrainData(Train)
+{
+	function MatchTrain(OldTrain)
+	{
+		//	arrival time changes too much, use the predicition id
+		return OldTrain.PredictionId == Train.PredictionId;
+		/*
+		if ( OldTrain.ArrivalTime != Train.ArrivalTime )
+			return false;
+		if ( OldTrain.Line != Train.Line )
+			return false;
+		if ( OldTrain.Station != Train.Station )
+			return false;
+		*/
+		return true;
+	}
+	
+	//	insert into train data, but detect duplicate
+	const ExistingTrain = TrainData.find(MatchTrain);
+	if ( ExistingTrain )
+		return;
+	
+	//	make element
+	const TrainListElement = document.querySelector('#TrainList');
+	const TrainElement = document.createElement('div');
+	TrainListElement.appendChild(TrainElement);
+	
+	TrainData.push(Train);
+	
+	
+	//	save references
+	TrainElement.Train = Train;
+	Train.Element = TrainElement;
+	SortDomNodes();
+}
+
+function SortDomNodes()
+{
+	const TrainListElement = document.querySelector('#TrainList');
+	
+	function SortTrainElement(a,b)
+	{
+		const ta = a.Train;
+		const tb = b.Train;
+		if ( ta.ArrivalTime < tb.ArrivalTime )
+			return -1;
+		if ( ta.ArrivalTime > tb.ArrivalTime )
+			return 1;
+		return 0;
+	}
+	
+	//	get an array of child nodes, sort them, then re-add in order
+	const Children = [...TrainListElement.children];
+	Children.sort( SortTrainElement ).forEach( e => TrainListElement.appendChild(e) );
+}
+
+function UpdateDomNodes()
+{
+	function UpdateTrainElement(TrainElement)
+	{
+		const Train = TrainElement.Train;
+		const NowSecs = GetTimeNowSecs();
+		const TrainLeaveTime = (Train.ArrivalTime + TrainWaitTimeSecs);
+		const Expired = TrainLeaveTime <= NowSecs;
+		const Arrived = Train.ArrivalTime <= NowSecs && TrainLeaveTime > NowSecs;
+		const New = Train.AddedTime > (NowSecs - TrainNewTimeSecs);
+		Expired ? TrainElement.setAttribute('Expired',Expired) : TrainElement.removeAttribute('Expired');
+		Arrived ? TrainElement.setAttribute('Arrived',Arrived) : TrainElement.removeAttribute('Arrived');
+		New ? TrainElement.setAttribute('New',New) : TrainElement.removeAttribute('New');
+	
+		const TimeToArrive = Train.ArrivalTime - NowSecs;
+		const TimeToArriveString = (TimeToArrive>0) ? TimeToArrive : ''; 
+		TrainElement.setAttribute('Station',Train.Station);
+		TrainElement.setAttribute('Line',Train.Line);
+		TrainElement.setAttribute('SecsToArrive',TimeToArrive);
+
+		const DisplayString = `${Train.Station} ${Train.Line} ${Train.PredictionId}`;
+		if ( TrainElement.innerText != DisplayString )
+			TrainElement.innerText = DisplayString;
+	}
+	
+	const TrainListElement = document.querySelector('#TrainList');
+	const Children = [...TrainListElement.children];
+	Children.forEach(UpdateTrainElement);
+}
+
+async function RefreshStation(StationCode)
+{
+	const TimeSecs = GetTimeNowSecs();
+	const Json = await GetStationJson(StationCode);
+	const Trains = await GetStationTrains(Json,StationCode,TimeSecs);
+	
+	Trains.forEach( PushTrainData );
+}
+	
+
+async function RefreshStations()
+{
+	let CurrentIndex = 0;
+
+	async function WaitSecs(Secs)
+	{
+		for ( let i=0;	i<Secs;	i++ )
+		{
+			UpdateDomNodes();
+			await Pop.Yield( 1*1000 );
+		}
+		UpdateDomNodes();
+	}
+
+	while(true)
+	{
+		const CurrentStation = StationNames[CurrentIndex];
+		try
+		{
+			await RefreshStation(CurrentStation);
+			UpdateDomNodes();
+		}
+		catch(e)
+		{
+			console.error(`Refreshing station ${CurrentStation} error: ${e}`);
+			await WaitSecs(1);
+		}
+		CurrentIndex = (CurrentIndex+1) % StationNames.length;
+		UpdateDomNodes();
+		
+		if ( CurrentIndex == 0 )
+		{
+			console.log(`Updated all trains`);
+			await WaitSecs(10);
+		}
+	}
+}
+
+RefreshStations();
+
+</script>
+
+</body>
+</html>
