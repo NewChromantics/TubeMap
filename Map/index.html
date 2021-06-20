@@ -203,7 +203,7 @@ import {StationStopPoints,StationFormattedNames,LineFormattedNames} from './Stat
 
 const TrainNewTimeSecs = 5;
 const TrainWaitTimeSecs = 13;
-const ThrottleUpdateNextSecs = 4;
+const ThrottleUpdateNextSecs = 3;
 const ThrottleUpdateAllSecs = 600;
 
 
@@ -487,7 +487,7 @@ async function RefreshStations()
 		{
 			console.error(`Refreshing station ${CurrentStation} error: ${e}`);
 			ShowInfo(`Refreshing station ${CurrentStation} error: ${e}`);
-			await WaitSecs(1);
+			//await WaitSecs(1);
 		}
 		CurrentIndex = (CurrentIndex+1) % StationNames.length;
 		await WaitSecs(ThrottleUpdateNextSecs);
