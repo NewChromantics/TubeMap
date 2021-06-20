@@ -6,10 +6,20 @@
 
 :root
 {
-	--northern:		#000;
-	--circle:		#ec4;
-	--metropolitan:	#838;
-	--hammersmith-city:	#c5c;
+	--NewColour:			#5d5;
+	
+	--northern:				#222;
+	--circle:				#ec4;
+	--metropolitan:			#915;
+	--hammersmith-city:		#e8a;
+	--piccadilly:			#238;
+	--overground:			#fa0;
+	--central:				#e11;
+	--jubilee:				#aab;	/* very slight tint from grey*/
+	--waterloo-city:		#7c9;
+	--district:				#153;
+	--bakerloo:				#851;
+	--victoria:				#29f;
 }
 
 body
@@ -42,10 +52,19 @@ body
 	--LineColour:	lime;	/* default */
 }
 
-#TrainList *[Line=northern]	{	--LineColour:	var(--northern);	}
-#TrainList *[Line=circle]	{	--LineColour:	var(--circle);	}
-#TrainList *[Line=metropolitan]	{	--LineColour:	var(--metropolitan);	}
+#TrainList *[Line=northern]			{	--LineColour:	var(--northern);	}
+#TrainList *[Line=circle]			{	--LineColour:	var(--circle);	}
+#TrainList *[Line=metropolitan]		{	--LineColour:	var(--metropolitan);	}
 #TrainList *[Line=hammersmith-city]	{	--LineColour:	var(--hammersmith-city);	}
+#TrainList *[Line=piccadilly]		{	--LineColour:	var(--piccadilly);	}
+#TrainList *[Line=overground]		{	--LineColour:	var(--overground);	}
+#TrainList *[Line=central]			{	--LineColour:	var(--central);	}
+#TrainList *[Line=jubilee]			{	--LineColour:	var(--jubilee);	}
+#TrainList *[Line=waterloo-city]	{	--LineColour:	var(--waterloo-city);	}
+#TrainList *[Line=district]			{	--LineColour:	var(--district);	}
+#TrainList *[Line=bakerloo]			{	--LineColour:	var(--bakerloo);	}
+#TrainList *[Line=victoria]			{	--LineColour:	var(--victoria);	}
+
 
 
 #TrainList *
@@ -54,28 +73,70 @@ body
 	background-color:	white;
 }
 
-#TrainList *[Arrived]
+#TrainList *[Arrived],
+#TrainList *[Expired]
 {
 	color:				white;
 	background-color:	var(--LineColour);
 }
 
-#TrainList *:before
+/* only display seconds if not blank, otherwise padding makes it visible */
+#TrainList *:after
 {
-	display:	inline-block;
+	display:			inline-block;
 	content:			attr(SecsToArrive);
 	background-color:	#eee;
 	color:				#ccc;
 	width:				3em;
-	padding-right:		0.3em;
-	text-align:			right;
+	margin-left:		0.6em;
+	padding:			0.3em;
+	font-size:			70%;
+	overflow:			hidden;
+}
+
+#TrainList *:after[SecsToArrive=""]
+{
+	display:	none;
+}
+
+
+#TrainList *:before
+{
+	xdisplay:			inline-block;
+	content:			attr(Line);
+	background-color:	var(--LineColour);
+	color:				#eee;
+	width:				8em;
+	text-align:			center;
+	margin:				0.3em;
+	margin-right:		0.6em;
+	padding:			0.3em;
+	font-size:			70%;
+	overflow:			hidden;
+	
+	/* vertically center without throwing off the main content */
+	display:			inline-flex;
+	align-items:		center;
+	justify-content:	center;
+}
+
+#TrainList *[New]:after
+{
+	content:		"new!";
+	text-align:			center;
+	color:			var(--NewColour);
 }
 
 #TrainList *[Expired]
 {
 	--LineColour:	#ccc;
 }
-
+/*
+#TrainList *[New]
+{
+	--LineColour:	#0f0;
+}
+*/
 /*
 #TrainList 
 {
@@ -103,7 +164,6 @@ body
 </style>
 </head>
 <body>
-
 <h1>Next trains arriving</h1>
 <div id="TrainList"></div>
 
@@ -111,15 +171,20 @@ body
 
 import * as Pop from './PopUtils.js'
 
+//	gr: this doesnt always find them??
 //	https://api.tfl.gov.uk/StopPoint/Search/camden?modes=tube%2Coverground
-const StationStopPoints = {};
-StationStopPoints.CTN = '940GZZLUCTN';//	camden underground
-StationStopPoints.EUS = '940GZZLUESQ';//	euston
+//	got a list from a forum post
+//	https://techforum.tfl.gov.uk/t/find-all-tfl-stoppoints/1324/2
+//	https://api.tfl.gov.uk/StopPoint/mode/tube returns SOO much data
+import {StationStopPoints,StationFormattedNames,LineFormattedNames} from './Stations.js'
 
-const StationNames = Object.keys(StationStopPoints);
+
 
 const TrainNewTimeSecs = 5;
 const TrainWaitTimeSecs = 13;
+const ThrottleUpdateNextSecs = 4;
+const ThrottleUpdateAllSecs = 600;
+
 
 //	filtering only these modes
 const ModeNames = 
@@ -128,8 +193,6 @@ const ModeNames =
 'tube'
 ];
 
-const LineNames = {};
-LineNames.northern = 'N';
 
 const TrainData = [];
 
@@ -180,9 +243,9 @@ function TimestampToTimeSecs(DateString)
 //	parse XML
 /*
  <S Code="CTN" Mess="" N="Camden Town." CurTime="15:45:59">
-    <P N="Northbound - Platform 1" Num="1" TrackCode="TN60164" NextTrain="false">
-      <T TrainId="2943082" LCID="141" SetNo="054" TripNo="11" SecondsTo="0" TimeTo="-" Location="At Platform" Destination="Edgware via CX" InputDest="EDG3-X (EDG3//EDG3-X) [EDG3=X/EDG3=X]" DestCode="153" Order="0" DepartTime="14:45:33" DepartInterval="0" Departed="0" Direction="0" IsStalled="0" TrackCode="TN60165" LN="N" LeadingCarNo="51641" />
-     */
+",<P N="Northbound - Platform 1" Num="1" TrackCode="TN60164" NextTrain="false">
+",  <T TrainId="2943082" LCID="141" SetNo="054" TripNo="11" SecondsTo="0" TimeTo="-" Location="At Platform" Destination="Edgware via CX" InputDest="EDG3-X (EDG3//EDG3-X) [EDG3=X/EDG3=X]" DestCode="153" Order="0" DepartTime="14:45:33" DepartInterval="0" Departed="0" Direction="0" IsStalled="0" TrackCode="TN60165" LN="N" LeadingCarNo="51641" />
+", */
 async function GetStationTrains(StationJson,StationCode,FetchTimeSecs)
 {
 	function MinimiseTrain(TrainData)
@@ -197,8 +260,8 @@ async function GetStationTrains(StationJson,StationCode,FetchTimeSecs)
 		const Train = {};
 		Train.AddedTime = FetchTimeSecs;
 		Train.ArrivalTime = FetchTimeSecs + TrainData.timeToStation;
-		Train.Line = TrainData.lineId;
-		Train.Station = StationCode;
+		Train.Line = LineFormattedNames[TrainData.lineId] || TrainData.lineId;
+		Train.Station = StationFormattedNames[StationCode];
 		Train.PredictionId = TrainData.id;	//	seems to be unique (string)
 		
 		//	"delete this data from your cache"
@@ -310,11 +373,15 @@ function UpdateDomNodes()
 		const TimeToArriveString = (TimeToArrive>0) ? TimeToArrive : ''; 
 		TrainElement.setAttribute('Station',Train.Station);
 		TrainElement.setAttribute('Line',Train.Line);
-		TrainElement.setAttribute('SecsToArrive',TimeToArrive);
+		TrainElement.setAttribute('SecsToArrive',TimeToArriveString);
+		TrainElement.setAttribute('PredictionId',Train.PredictionId);
 
-		const DisplayString = `${Train.Station} ${Train.Line} ${Train.PredictionId}`;
-		if ( TrainElement.innerText != DisplayString )
+		const DisplayString = `${Train.Station}`;
+		if ( TrainElement.InnerTextCache != DisplayString )
+		{
 			TrainElement.innerText = DisplayString;
+			TrainElement.InnerTextCache = DisplayString;
+		}
 	}
 	
 	const TrainListElement = document.querySelector('#TrainList');
@@ -345,6 +412,11 @@ async function RefreshStations()
 		}
 		UpdateDomNodes();
 	}
+	
+	//	for debugging shuffle the order we fetch
+	let StationNames = Object.keys(StationStopPoints);
+	Pop.ShuffleArray(StationNames);
+
 
 	while(true)
 	{
@@ -360,12 +432,12 @@ async function RefreshStations()
 			await WaitSecs(1);
 		}
 		CurrentIndex = (CurrentIndex+1) % StationNames.length;
-		UpdateDomNodes();
+		await WaitSecs(ThrottleUpdateNextSecs);
 		
 		if ( CurrentIndex == 0 )
 		{
 			console.log(`Updated all trains`);
-			await WaitSecs(10);
+			await WaitSecs(ThrottleUpdateAllSecs);
 		}
 	}
 }

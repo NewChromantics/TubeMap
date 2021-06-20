@@ -2,6 +2,17 @@ const Default = 'PopUtils Module';
 export default Default;
 
 
+//	shuffle in place
+export function ShuffleArray(array)
+{
+	//	https://stackoverflow.com/a/47900462/355753
+	//	this is faster than splicing
+	for (var i = array.length - 1; i > 0; i--)
+	{
+		var j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+}
 
 export function GetTimeNowMs()
 {
