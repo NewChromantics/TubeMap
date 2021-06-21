@@ -199,7 +199,7 @@ export async function RefreshStationsThread(OnTrainDataChanged,OnError,OnDebug)
 	
 	//	for debugging shuffle the order we fetch
 	let StationNames = Object.keys(StationStopPoints);
-	//Pop.ShuffleArray(StationNames);
+	Pop.ShuffleArray(StationNames);
 
 	while(true)
 	{
