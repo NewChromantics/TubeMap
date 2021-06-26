@@ -14,9 +14,38 @@
 //	https://api.tfl.gov.uk/StopPoint/mode/tube returns SOO much data
 
 
+export const LineShortNames =
+{
+	northern:			'NO',
+	circle:				'CR',
+	metropolitan:		'MT',
+	'hammersmith-city':	'HC',
+	piccadilly:			'PC',
+	overground:			'OV',
+	'london-overground': 'OV',
+	central:			'CN',
+	jubilee:			'JU',
+	'waterloo-city':	'WC',
+	district:			'DI',
+	bakerloo:			'BK',
+	victoria:			'VC',
+	dlr:				'DL',
+};
+
 export const LineFormattedNames =
 {
-	'london-overground':	'overground'
+	'london-overground':	'overground',
+};
+
+export const StationShortNames = 
+{
+	Aldgate:		"ALD",
+	Aldgate$East:	"ALE",
+	Archway:		"ARC",
+	Arsenal:		"ARS",
+	Baker$Street:	"BKR",
+	Bank:			"BNK",
+	Temple:			"TMP",
 };
 
 export const StationStopPoints =
