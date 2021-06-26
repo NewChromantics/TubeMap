@@ -303,8 +303,48 @@ async function RefreshDomThread()
 	}
 }
 
+async function RefreshFromNewChromanticsTubeApi(Url='https://tube.newchromantics.com/data')
+{
+	while ( true )
+	{
+		//const Url = 'localhost:80/data';
+		const FetchParams = {};
+		FetchParams.mode = 'cors';
+		const Response = await fetch(Url,FetchParams);
+		const NewData = await Response.json();
+		Object.assign( TubeApi.TrainData, NewData );
+		OnTrainDataChanged();
+		await Pop.Yield(10*1000);
+	}
+}
+
+async function RefreshThread()
+{
+	try
+	{
+		await RefreshFromNewChromanticsTubeApi('http://localhost:80/data');
+	}
+	catch(e)
+	{
+	}
+
+	try
+	{
+		await RefreshFromNewChromanticsTubeApi();
+	}
+	catch(e)
+	{
+		ShowInfo(`Error fetching from server (${e}), using TFL api`);
+	}
+	
+	await TubeApi.RefreshStationsThread(OnTrainDataChanged,ShowInfo,ShowInfo);//.catch(ShowInfo);
+}
+
+
 RefreshDomThread().catch(ShowInfo);
-TubeApi.RefreshStationsThread(OnTrainDataChanged,ShowInfo,ShowInfo).catch(ShowInfo);
+RefreshThread().catch(ShowInfo);
+//await TubeApi.RefreshStationsThread(OnTrainDataChanged,ShowInfo,ShowInfo);//.catch(ShowInfo);
+
 
 </script>
 
