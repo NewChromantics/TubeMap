@@ -93,6 +93,7 @@ async function GetStationTrains(StationJson,StationCode,FetchTimeSecs)
 		Train.ArrivalTime = FetchTimeSecs + TrainData.timeToStation;
 		Train.Line = LineFormattedNames[TrainData.lineId] || TrainData.lineId;
 		Train.Station = StationFormattedNames[StationCode];
+		Train.StationCode = StationCode;
 		Train.PredictionId = TrainData.id;	//	seems to be unique (string)
 		
 		//	"delete this data from your cache"
