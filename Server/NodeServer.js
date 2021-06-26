@@ -44,6 +44,7 @@ async function HandleResponse(Function,Request,Response)
 
 		Response.statusCode = Output.StatusCode;
 		Response.setHeader('Content-Type',Output.Mime);
+		Response.setHeader('access-control-allow-origin','*');
 		
 		Response.end(Output.Content);
 	}
