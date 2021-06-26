@@ -84,7 +84,7 @@ async function GetStationTrains(StationJson,StationCode,FetchTimeSecs)
 		//	filter out non underground/overground trains
 		if ( ModeNames.indexOf(TrainData.modeName) == -1 )
 		{
-			console.log(`Filtered out train mode ${TrainData.modeName}`);
+			//console.log(`Filtered out train mode ${TrainData.modeName}`);
 			return null;
 		}
 			
