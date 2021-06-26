@@ -1,6 +1,8 @@
 import fetch from 'node-fetch'
 import Pop from './PopApi.js'
 import * as TubeApi from '../docs/TflApi.js' 
+import * as Stations from '../docs/Stations.js' 
+
 
 
 class Train_t
@@ -12,7 +14,7 @@ class Train_t
 
 //	if this is set, we return it to client
 let ServerError = null;
-let StationTrains = {};	//	[Station TLA] = [Train_t]
+let LastStationsChangedTime = null;
 
 function OnError(Error)
 {
@@ -20,148 +22,70 @@ function OnError(Error)
 	ServerError = Error;
 }
 
-
-function GetStationXmlUrl(Station,Line)
+function OnTrainDataChanged()
 {
-	const Server = "cloud.tfl.gov.uk";
-	const Port = 80;
-	const Url = `http://${Server}:${Port}/TrackerNet/PredictionDetailed/${Line}/${Station}`;
-	return Url;
+	console.log(`Train data changed`);
+	LastStationsChangedTime = true;//Pop.GetTimeNowMs();
 }
 
-async function GetStationXml(Station,Line)
+function OnDebug(Debug)
 {
-	const Url = GetStationXmlUrl(Station,Line);
-	console.log(`Fetch ${Url}`);
-	const Response = await fetch(Url);
-	console.log(`Status Code: ${Response.status}`);
-	const Xml = await Response.text();
-	console.log(`Fetch result ${Xml.slice(0,30)}...`);
-	return Xml;
+	console.log(Debug);
 }
+
+try
+{
+	TubeApi.SetFetchFunction( fetch );
+	TubeApi.RefreshStationsThread(OnTrainDataChanged,OnError,OnDebug).catch(OnError);
+}
+catch(e)
+{
+	OnError(e);
+}
+
+
+export function GetTrainData()
+{
+	console.log(`GetTrainData()`);
+	return TubeApi.TrainData;
+}
+
+export function GetNextTrains()
+{
+	const Now = TubeApi.GetTimeNowSecs();
+	const MaxFutureSecs = 60*3;
+	const MaxPastSecs = TubeApi.TrainWaitTimeSecs;
 	
-function UpdateTrainData(Train)
-{
-	const Station = Train.Station;
-	//console.log(`UpdateTrain in ${Station}`);
-	if ( !StationTrains.hasOwnProperty(Station) )
-		StationTrains[Station] = [];
-	
-	StationTrains[Station].push(Train);
-	//console.log(`UpdateTrainData`,StationTrains);
-}
-
-async function GetStationTrains(Xml,Station,Line)
-{
-	//	regex 
-	//const TrainPattern = `<T (.*)[.*] TimeTo="(.*)"[.*]/>`;
-	const TrainPattern = `<T(.*)TimeTo="([^\"]*)"(.*)LN="([^\"]*)"(.*)/>`;
-	const TrainMatches = [...Xml.matchAll(TrainPattern)];
-	
-	//console.log(`TrainMatches=${TrainMatches}`);
-	console.log(`TrainMatches x${TrainMatches.length}`);
-	function MatchToTrain(Match)
+	function TrainWithinScope(Train)
 	{
-		const Time = (Match[2] == '-') ? '0:00' : Match[2];	//	1:00
-		const LineCode = Match[4];
-		const Train = new Train_t();
-		Train.ArrivalTime = Time;
-		Train.Line = LineCode; 	//	gr: maybe dont need to pull this out
-		Train.Station = Station;
-		//console.log(`train; ${JSON.stringify(Train)}`);
-		return Train;
-	}
-	const Trains = TrainMatches.map(MatchToTrain);
-	return Trains;
-}
-
-async function RefreshStation(Station,Line)
-{
-	console.log(`RefreshStation(${Station},${Line})`);
-	const Xml = await GetStationXml(Station,Line);
-	const Trains = await GetStationTrains(Xml,Station,Line);
-	Trains.forEach( UpdateTrainData );
-}
-
-async function UpdateStationsThread()
-{
-	let CurrentStationIndex = 0;
-	let CurrentLineIndex = 0;
-
-	while(true)
-	{
-		const CurrentStation = Tube.Stations[CurrentStationIndex];
-		const CurrentLine = Tube.Lines[CurrentLineIndex];
-		try
-		{
-			await RefreshStation(CurrentStation,CurrentLine);
-			console.log(StationTrains);
-		}
-		catch(e)
-		{
-			console.error(`Refreshing station ${CurrentStation}(#${CurrentLine}) error: ${e}`);
-			await Pop.Yield(1*1000);
-		}
-		
-		CurrentLineIndex = (CurrentLineIndex+1) % Tube.Lines.length;
-		
-		//	done all lines, next station
-		if ( CurrentLineIndex == 0 )
-		{
-			CurrentStationIndex = (CurrentStationIndex+1) % Tube.Stations.length;
-			
-			//	done all stations
-			//	pause when we've looped
-			if ( CurrentStationIndex == 0 )
-			{
-				console.log(`Iterated all stations, pausing...`);
-				await Pop.Yield(100*1000);
-			}
-		}
-		
-		await Pop.Yield(0*1000);
-	}
-}
-//UpdateStationsThread().catch(OnError);
-
-
-export function GetLatestStationTrains()
-{
-	if ( ServerError )
-		throw ServerError;
-		
-	console.log(`GetLatestStationTrains`,StationTrains);
-
-	return StationTrains;
-}
-
-
-
-export function GetStationNextTrains()
-{
-	if ( ServerError )
-		throw ServerError;
-
-	const OutputTrains = [];
-	function PushTrain(Station,Train)
-	{
-		OutputTrains.push(Train);
-	}
-
-	for ( let Station in StationTrains )
-	{
-		//	get one with lowest time
-		const Trains = StationTrains[Station];
-		if ( !Trains.length )
-			continue;
-		PushTrain(Station,Trains[0]);
+		const ArrivalTime = Train.ArrivalTime - Now;
+		if ( ArrivalTime < -MaxPastSecs )
+			return false;
+		if ( ArrivalTime > MaxFutureSecs )
+			return false;
+		return true;
 	}
 	
-	function TrainToLine(Train)
+	function TrainArrivalTimeCompare(a,b)
 	{
-		return `${Train.Station},${Train.Line}@${Train.ArrivalTime}`;
+		if ( a.ArrivalTime < b.ArrivalTime )
+			return -1;
+		if ( a.ArrivalTime > b.ArrivalTime )
+			return 1;
+		return 0;
 	}
-	const OutputLines = OutputTrains.map(TrainToLine);
-	return OutputLines.join('\n');
+	
+	function TrainToCsv(Train)
+	{
+		const ArrivalSecs = Train.ArrivalTime - Now;
+		const Station = Stations.StationShortNames[Train.StationCode] || Train.StationCode;
+		const Line = Stations.LineShortNames[Train.Line] || Train.Line;
+		return `${Station}/${Line}/${ArrivalSecs}`;
+	}
+	
+	let Trains = TubeApi.TrainData.filter(TrainWithinScope);
+	Trains = Trains.sort( TrainArrivalTimeCompare );
+	const Csv = Trains.map( TrainToCsv );
+	
+	return Csv;
 }
-

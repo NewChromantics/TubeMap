@@ -1,7 +1,4 @@
 import os from 'os'
-//const os = require( 'os' );
-//const Pop = require('./PopApi');
-//import Pop from './PopApi.js'
 import ExpressModule from 'express'
 import * as TubeApi from './TubeApi.js';
 
@@ -20,9 +17,8 @@ const HttpServerApp = ExpressModule();
 
 
 //HttpServerApp.get(RootUrlPattern,HandleStationCsv);
-HttpServerApp.get('/',HandleStationCsv);
-HttpServerApp.get('/next',HandleStationNextCsv);
-
+HttpServerApp.get('/data',HandleDataJson);
+HttpServerApp.get('/next',HandleNextCsv);
 
 const HttpServer = HttpServerApp.listen( HttpListenPort, () => console.log( `http server on ${JSON.stringify(HttpServer.address())}` ) );
 
@@ -61,24 +57,22 @@ async function HandleResponse(Function,Request,Response)
 }
 
 
-
-async function HandleStationCsv(Request,Response)
+async function HandleDataJson(Request,Response)
 {
 	async function Run(Request)
 	{
-		const LatestStations = await TubeApi.GetLatestStationTrains();
-		return JSON.stringify(LatestStations,null,'\t');
+		const Data = await TubeApi.GetTrainData();
+		return JSON.stringify(Data,null,'\t');
 	}
 	return HandleResponse( Run, Request, Response );
 }
 
-async function HandleStationNextCsv(Request,Response)
+async function HandleNextCsv(Request,Response)
 {
 	async function Run(Request)
 	{
-		const NextTrains = await TubeApi.GetStationNextTrains();
-		//return JSON.stringify(NextTrains,null,'\t');
-		return NextTrains;
+		const NextTrains = await TubeApi.GetNextTrains();
+		return NextTrains.join('\n');
 	}
 	return HandleResponse( Run, Request, Response );
 }
