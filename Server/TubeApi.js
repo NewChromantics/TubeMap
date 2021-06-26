@@ -1,7 +1,6 @@
-const Tube = require('./TubeStations.js');
-const fetch = require('node-fetch');
-const Pop = require('./PopApi');
-
+import fetch from 'node-fetch'
+import Pop from './PopApi.js'
+import * as TubeApi from '../docs/TflApi.js' 
 
 
 class Train_t
@@ -123,10 +122,10 @@ async function UpdateStationsThread()
 		await Pop.Yield(0*1000);
 	}
 }
-UpdateStationsThread().catch(OnError);
+//UpdateStationsThread().catch(OnError);
 
 
-function GetLatestStationTrains()
+export function GetLatestStationTrains()
 {
 	if ( ServerError )
 		throw ServerError;
@@ -138,7 +137,7 @@ function GetLatestStationTrains()
 
 
 
-function GetStationNextTrains()
+export function GetStationNextTrains()
 {
 	if ( ServerError )
 		throw ServerError;
@@ -166,14 +165,3 @@ function GetStationNextTrains()
 	return OutputLines.join('\n');
 }
 
-
-
-//	node.js exports
-if ( module )
-{
-	module.exports =
-	{
-		GetLatestStationTrains,
-		GetStationNextTrains
-	};
-}

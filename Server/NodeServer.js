@@ -1,7 +1,10 @@
-const os = require( 'os' );
-const Pop = require('./PopApi');
-const ExpressModule = require('express');
-const TubeApi = require('./TubeApi');
+import os from 'os'
+//const os = require( 'os' );
+//const Pop = require('./PopApi');
+//import Pop from './PopApi.js'
+import ExpressModule from 'express'
+import * as TubeApi from './TubeApi.js';
+
 
 const CorsOrigin = process.env.CorsOrigin || '*';
 const ErrorStatusCode = 500;
@@ -79,3 +82,4 @@ async function HandleStationNextCsv(Request,Response)
 	}
 	return HandleResponse( Run, Request, Response );
 }
+
