@@ -16,7 +16,14 @@ const ModeNames =
 'dlr'
 ];
 
+//	specific syntax for node.js
+let FetchFunction = (typeof fetch != 'undefined') ? fetch : null;
 
+//	for node, we need to define fetch() outside this file
+export function SetFetchFunction(NewFetchFunction)
+{
+	FetchFunction = NewFetchFunction;
+}
 
 export const TrainData = [];
 
@@ -30,16 +37,16 @@ async function GetStationJson(StationCode)
 	const StopPoint = StationStopPoints[StationCode];
 	const Url = GetStationUrl(StopPoint);
 	
-	const headers = new Headers();
+	//const headers = new Headers();
 	//headers.append('Access-Control-Allow-Origin','*');
 	
 	const FetchParams = {};
 	//FetchParams.mode = 'no-cors';
 	FetchParams.mode = 'cors';
-	FetchParams.headers = headers;
+	//FetchParams.headers = headers;
 	//FetchParams.redirect = 'follow';
 	
-	const Response = await fetch( Url, FetchParams );
+	const Response = await FetchFunction( Url, FetchParams );
 	//const TextPromise = Response.text();
 	const JsonPromise = Response.json();
 	//const Body = await TextPromise;
