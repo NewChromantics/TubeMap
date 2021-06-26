@@ -124,7 +124,7 @@ async function GetStationTrains(StationJson,StationCode,FetchTimeSecs)
 	*/
 }
 
-function PushTrainData(Train)
+export function PushTrainData(Train)
 {
 	function MatchTrain(OldTrain)
 	{

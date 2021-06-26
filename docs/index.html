@@ -312,7 +312,7 @@ async function RefreshFromNewChromanticsTubeApi(Url='https://tube.newchromantics
 		FetchParams.mode = 'cors';
 		const Response = await fetch(Url,FetchParams);
 		const NewData = await Response.json();
-		Object.assign( TubeApi.TrainData, NewData );
+		NewData.forEach( TubeApi.PushTrainData );
 		OnTrainDataChanged();
 		await Pop.Yield(10*1000);
 	}
