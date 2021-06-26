@@ -161,7 +161,7 @@ async function CheckStationHasTrains(StationCode)
 
 	const FetchParams = {};
 	FetchParams.mode = 'cors';
-	const Response = await fetch( Url, FetchParams );
+	const Response = await FetchFunction( Url, FetchParams );
 	const Json = await Response.json();
 
 	const MatchingModes = Json.modes.filter( Mode => ModeNames.indexOf(Mode)!= -1);
