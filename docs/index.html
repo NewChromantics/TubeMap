@@ -204,7 +204,7 @@ import * as Pop from './PopUtils.js'
 import * as TubeApi from './TflApi.js'
 
 export const TrainNewTimeSecs = 2;
-
+const DeleteAfterExpiredSecs = 10;
 
 function SortDomNodes()
 {
@@ -228,11 +228,29 @@ function SortDomNodes()
 
 function MakeTrainElement(Train)
 {
+	const NowSecs = TubeApi.GetTimeNowSecs();
+	const TrainLeaveTime = (Train.ArrivalTime + TubeApi.TrainWaitTimeSecs);
+	const Expired = TrainLeaveTime <= NowSecs;
+	const VeryExpired = TrainLeaveTime + DeleteAfterExpiredSecs <= NowSecs;
+
+	const TrainListElement = document.querySelector('#TrainList');
+
+	//	delete element if very expired
+	if ( VeryExpired )
+	{
+		if ( Train.Element )
+		{
+			console.log(`Deleting very expired element ${Train.Element}`);
+			TrainListElement.removeChild(Train.Element);
+			Train.Element = null;
+		}
+		return null;
+	}
+
 	if ( Train.Element )
 		return Train.Element;
 		
 	//	make element
-	const TrainListElement = document.querySelector('#TrainList');
 	const TrainElement = document.createElement('div');
 	TrainListElement.appendChild(TrainElement);
 
@@ -249,6 +267,10 @@ function UpdateTrainDom(Train)
 {
 	MakeTrainElement(Train);
 	const TrainElement = Train.Element;
+	
+	//	excluded/deleted for whatever reason
+	if ( !TrainElement )
+		return;
 
 	const NowSecs = TubeApi.GetTimeNowSecs();
 	const TrainLeaveTime = (Train.ArrivalTime + TubeApi.TrainWaitTimeSecs);
