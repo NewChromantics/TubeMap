@@ -50,10 +50,12 @@ export function GetTrainData()
 	return TubeApi.TrainData;
 }
 
-export function GetNextTrains()
+export function GetNextTrains(MaxFutureSecs)
 {
+	if ( !MaxFutureSecs )
+		throw `GetNextTrains(MaxFutureSecs=${MaxFutureSecs}) not specified`;
 	const Now = TubeApi.GetTimeNowSecs();
-	const MaxFutureSecs = 60*3;
+	//const MaxFutureSecs = 60*3;
 	const MaxPastSecs = TubeApi.TrainWaitTimeSecs;
 	
 	function TrainWithinScope(Train)

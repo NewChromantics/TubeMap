@@ -71,7 +71,8 @@ async function HandleNextCsv(Request,Response)
 {
 	async function Run(Request)
 	{
-		const NextTrains = await TubeApi.GetNextTrains();
+		const FutureSecs = 60;
+		const NextTrains = await TubeApi.GetNextTrains(FutureSecs);
 		return NextTrains.join('\n');
 	}
 	return HandleResponse( Run, Request, Response );
