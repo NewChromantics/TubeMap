@@ -6,7 +6,7 @@ import {StationStopPoints,StationFormattedNames,LineFormattedNames} from './Stat
 export const TrainWaitTimeSecs = 13;
 export const ThrottleUpdateNextSecs = 3;
 export const ThrottleUpdateAllSecs = 600;
-
+const FlushTrainDataAgedSecs = 60;	//	if it arrived this long ago, delete
 
 //	filtering only these modes [of transport]
 const ModeNames = 
@@ -26,6 +26,24 @@ export function SetFetchFunction(NewFetchFunction)
 }
 
 export const TrainData = [];
+
+function FlushOldData()
+{
+	const OldestAllowedTime = GetTimeNowSecs() - FlushTrainDataAgedSecs;
+	function IsNotTooOld(Train)
+	{
+		if ( Train.ArrivalTime >= OldestAllowedTime )
+			return true;
+		return false;
+	}
+
+	//	gr: could be more efficient, but this is simple
+	const FilteredData = TrainData.filter( IsNotTooOld );
+	//	remove old all data from array (to keep const)
+	TrainData.splice(0,TrainData.length);
+	//	put in remanining data
+	TrainData.push( ...FilteredData );
+}
 
 function GetStationUrl(StopPoint)
 {
@@ -185,6 +203,7 @@ async function RefreshStation(StationCode)
 	}
 	
 	Trains.forEach( PushTrainData );
+	FlushOldData();
 }
 
 
